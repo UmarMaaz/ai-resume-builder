@@ -42,7 +42,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
       console.log("Making Gemini API request with prompt:", prompt);
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+      // Updated API URL to use the correct version and model
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key=${API_KEY}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
