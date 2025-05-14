@@ -40,6 +40,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
         prompt = `Improve this text to make it more professional and suitable for a resume: "${inputText}". Keep approximately the same length but enhance the wording and impact.`;
       }
 
+      console.log("Making Gemini API request with prompt:", prompt);
+
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
         method: "POST",
         headers: {
@@ -54,23 +56,39 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
                 }
               ]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 500,
+          }
         }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API Error Response:", response.status, errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log("Gemini API response:", data);
       
       if (data.candidates && data.candidates[0] && data.candidates[0].content) {
         const generatedText = data.candidates[0].content.parts[0].text;
         onGeneratedText(generatedText);
         toast.success("AI suggestion generated!");
+      } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+        console.error("Content blocked:", data.promptFeedback);
+        throw new Error(`Content blocked: ${data.promptFeedback.blockReason}`);
       } else {
         console.error("Unexpected API response format:", data);
-        throw new Error("Failed to generate content");
+        throw new Error("Failed to generate content: Invalid API response format");
       }
     } catch (error) {
       console.error("Error generating content:", error);
-      toast.error("Failed to generate content. Using fallback.");
+      toast.error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Fallback to mock responses if API fails
       const mockResponse = mockGeminiResponse(inputText, type);
