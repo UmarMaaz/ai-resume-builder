@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { FileText, BookmarkCheck, Award } from "lucide-react";
 
 const TemplateSelector = () => {
   const { resumeData, updateTemplate } = useResumeContext();
@@ -14,31 +15,49 @@ const TemplateSelector = () => {
       id: "simple",
       name: "Simple",
       description: "Clean and straightforward layout",
+      icon: <FileText className="h-4 w-4" />
     },
     {
       id: "modern",
       name: "Modern",
       description: "Contemporary design with bold accents",
+      icon: <FileText className="h-4 w-4" />
     },
     {
       id: "minimalist",
       name: "Minimalist",
       description: "Elegant and spacious layout",
+      icon: <FileText className="h-4 w-4" />
     },
     {
       id: "professional",
       name: "Professional",
       description: "Traditional corporate style",
+      icon: <FileText className="h-4 w-4" />
     },
     {
       id: "compact",
       name: "Compact",
       description: "Space-efficient design for more content",
+      icon: <FileText className="h-4 w-4" />
     },
     {
       id: "creative",
       name: "Creative",
       description: "Colorful and unique presentation",
+      icon: <FileText className="h-4 w-4" />
+    },
+    {
+      id: "executive",
+      name: "Executive",
+      description: "Elegant premium design for executives",
+      icon: <Award className="h-4 w-4" />
+    },
+    {
+      id: "ats",
+      name: "ATS-Friendly",
+      description: "Optimized for applicant tracking systems",
+      icon: <BookmarkCheck className="h-4 w-4" />
     },
   ];
 
@@ -50,7 +69,7 @@ const TemplateSelector = () => {
           <RadioGroup
             value={resumeData.selectedTemplate}
             onValueChange={(value) => updateTemplate(value as any)}
-            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
           >
             {templates.map((template) => (
               <div key={template.id}>
@@ -66,9 +85,11 @@ const TemplateSelector = () => {
                     resumeData.selectedTemplate === template.id && "border-resume-accent"
                   )}
                 >
-                  <div className="h-4 w-4 rounded-full bg-resume-accent mb-2"></div>
+                  <div className="mb-2 text-resume-accent">
+                    {template.icon}
+                  </div>
                   <div className="font-semibold">{template.name}</div>
-                  <div className="text-xs text-center text-muted-foreground">
+                  <div className="text-xs text-center text-muted-foreground mt-1">
                     {template.description}
                   </div>
                 </Label>

@@ -7,6 +7,8 @@ import MinimalistTemplate from "./templates/MinimalistTemplate";
 import ProfessionalTemplate from "./templates/ProfessionalTemplate";
 import CompactTemplate from "./templates/CompactTemplate";
 import CreativeTemplate from "./templates/CreativeTemplate";
+import ExecutiveTemplate from "./templates/ExecutiveTemplate";
+import ATSTemplate from "./templates/ATSTemplate";
 
 const ResumePreview = () => {
   const { resumeData } = useResumeContext();
@@ -30,6 +32,12 @@ const ResumePreview = () => {
       )}
       {resumeData.selectedTemplate === "creative" && (
         <CreativeTemplate data={resumeData} />
+      )}
+      {resumeData.selectedTemplate === "executive" && (
+        <ExecutiveTemplate data={resumeData} />
+      )}
+      {resumeData.selectedTemplate === "ats" && (
+        <ATSTemplate data={resumeData} />
       )}
     </div>
   );

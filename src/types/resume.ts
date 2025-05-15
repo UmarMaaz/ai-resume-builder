@@ -28,7 +28,7 @@ export interface Certification {
   year: string;
 }
 
-export type TemplateType = "simple" | "modern" | "minimalist" | "professional" | "compact" | "creative";
+export type TemplateType = "simple" | "modern" | "minimalist" | "professional" | "compact" | "creative" | "executive" | "ats";
 
 export interface ResumeData {
   personalInfo: PersonalInfo;
