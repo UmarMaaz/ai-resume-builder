@@ -7,9 +7,10 @@ import ResumeForm from "@/components/ResumeForm";
 import ResumePreview from "@/components/ResumePreview";
 import { ResumeData } from "@/types/resume";
 import { Button } from "@/components/ui/button";
-import { ResumeProvider } from "@/context/ResumeContext";
+import { ResumeProvider, useResumeContext } from "@/context/ResumeContext";
 import html2pdf from "html2pdf.js";
 import Footer from "@/components/Footer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const initialResumeData: ResumeData = {
   personalInfo: {
@@ -49,25 +50,9 @@ const initialResumeData: ResumeData = {
   selectedTemplate: "simple",
 };
 
-const Index = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    // Load saved data from localStorage if it exists
-    const savedData = localStorage.getItem("resumeData");
-    if (savedData) {
-      try {
-        // Parse and validate the saved data
-        const parsedData = JSON.parse(savedData);
-        // If you want to validate the structure, you can add validation here
-      } catch (error) {
-        console.error("Error loading saved resume data:", error);
-        toast.error("Could not load your saved resume. Starting fresh.");
-        localStorage.removeItem("resumeData");
-      }
-    }
-    setIsLoading(false);
-  }, []);
+const ResumeActions = () => {
+  const { saveResume, loadSavedResumes, savedResumes, loadResume } = useResumeContext();
+  const [showSaved, setShowSaved] = useState(false);
 
   const handleExportToPDF = () => {
     const resumeElement = document.getElementById("resume-preview");
@@ -94,6 +79,78 @@ const Index = () => {
     );
   };
 
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={handleExportToPDF} className="bg-resume-accent hover:bg-resume-accent/90">
+          Export to PDF
+        </Button>
+        <Button onClick={saveResume} variant="outline">
+          Save Resume
+        </Button>
+        <Button onClick={() => {
+          setShowSaved(!showSaved);
+          loadSavedResumes();
+        }} variant="outline">
+          {showSaved ? "Hide Saved" : "Show Saved"}
+        </Button>
+      </div>
+
+      {showSaved && savedResumes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Saved Resumes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {savedResumes.map((resume) => (
+                <div 
+                  key={resume.id} 
+                  className="flex justify-between items-center p-2 hover:bg-gray-100 rounded cursor-pointer"
+                  onClick={() => loadResume(resume.id as string)}
+                >
+                  <div>
+                    <p className="font-medium">{resume.personalInfo.fullName || "Unnamed Resume"}</p>
+                    <p className="text-xs text-gray-500">
+                      {resume.updatedAt ? new Date(resume.updatedAt).toLocaleString() : "No date"}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={(e) => {
+                    e.stopPropagation();
+                    loadResume(resume.id as string);
+                  }}>
+                    Load
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+const Index = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Load saved data from localStorage if it exists
+    const savedData = localStorage.getItem("resumeData");
+    if (savedData) {
+      try {
+        // Parse and validate the saved data
+        const parsedData = JSON.parse(savedData);
+        // If you want to validate the structure, you can add validation here
+      } catch (error) {
+        console.error("Error loading saved resume data:", error);
+        toast.error("Could not load your saved resume. Starting fresh.");
+        localStorage.removeItem("resumeData");
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,9 +173,8 @@ const Index = () => {
                 <TabsTrigger value="edit">Edit Resume</TabsTrigger>
                 <TabsTrigger value="preview">Preview</TabsTrigger>
               </TabsList>
-              <Button onClick={handleExportToPDF} className="bg-resume-accent hover:bg-resume-accent/90">
-                Export to PDF
-              </Button>
+              
+              <ResumeActions />
             </div>
             <TabsContent value="edit" className="animate-fade-in">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

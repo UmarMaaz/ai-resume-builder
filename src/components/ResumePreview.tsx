@@ -5,12 +5,14 @@ import SimpleTemplate from "./templates/SimpleTemplate";
 import ModernTemplate from "./templates/ModernTemplate";
 import MinimalistTemplate from "./templates/MinimalistTemplate";
 import ProfessionalTemplate from "./templates/ProfessionalTemplate";
+import CompactTemplate from "./templates/CompactTemplate";
+import CreativeTemplate from "./templates/CreativeTemplate";
 
 const ResumePreview = () => {
   const { resumeData } = useResumeContext();
   
   return (
-    <div id="resume-preview" className="w-full min-h-[842px] bg-white">
+    <div id="resume-preview" className="w-full min-h-[842px] bg-white overflow-auto">
       {resumeData.selectedTemplate === "simple" && (
         <SimpleTemplate data={resumeData} />
       )}
@@ -22,6 +24,12 @@ const ResumePreview = () => {
       )}
       {resumeData.selectedTemplate === "professional" && (
         <ProfessionalTemplate data={resumeData} />
+      )}
+      {resumeData.selectedTemplate === "compact" && (
+        <CompactTemplate data={resumeData} />
+      )}
+      {resumeData.selectedTemplate === "creative" && (
+        <CreativeTemplate data={resumeData} />
       )}
     </div>
   );

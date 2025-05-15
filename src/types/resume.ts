@@ -28,7 +28,7 @@ export interface Certification {
   year: string;
 }
 
-export type TemplateType = "simple" | "modern" | "minimalist" | "professional";
+export type TemplateType = "simple" | "modern" | "minimalist" | "professional" | "compact" | "creative";
 
 export interface ResumeData {
   personalInfo: PersonalInfo;
@@ -39,4 +39,8 @@ export interface ResumeData {
   certifications: Certification[];
   hobbies: string;
   selectedTemplate: TemplateType;
+  id?: string; // Add ID field for database storage
+  userId?: string; // Add user ID field for database storage
+  createdAt?: string; // Add creation timestamp
+  updatedAt?: string; // Add update timestamp
 }

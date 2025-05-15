@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { ResumeData } from "@/types/resume";
+import { toast } from "sonner";
 
 interface ResumeContextType {
   resumeData: ResumeData;
@@ -20,6 +20,10 @@ interface ResumeContextType {
   removeCertification: (index: number) => void;
   updateHobbies: (hobbies: string) => void;
   updateTemplate: (template: ResumeData["selectedTemplate"]) => void;
+  saveResume: () => Promise<void>;
+  loadResume: (id: string) => Promise<void>;
+  savedResumes: ResumeData[];
+  loadSavedResumes: () => Promise<void>;
 }
 
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
@@ -55,11 +59,14 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
     return initialData;
   });
 
+  const [savedResumes, setSavedResumes] = useState<ResumeData[]>([]);
+
   // Save to localStorage whenever resumeData changes
   useEffect(() => {
     localStorage.setItem("resumeData", JSON.stringify(resumeData));
   }, [resumeData]);
 
+  // Utility functions for managing resume data
   const updatePersonalInfo = (personalInfo: Partial<ResumeData["personalInfo"]>) => {
     setResumeData((prev) => ({
       ...prev,
@@ -193,6 +200,68 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
     setResumeData((prev) => ({ ...prev, selectedTemplate }));
   };
 
+  // Database functions
+  const saveResume = async () => {
+    try {
+      // For now, we'll simulate a database save by storing in localStorage
+      const now = new Date().toISOString();
+      const updatedResume = {
+        ...resumeData,
+        id: resumeData.id || `resume-${Date.now()}`,
+        updatedAt: now,
+        createdAt: resumeData.createdAt || now,
+      };
+      
+      // Save the current resume
+      setResumeData(updatedResume);
+      
+      // Update savedResumes list
+      const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      const updatedResumes = existingResumes.filter((r: ResumeData) => r.id !== updatedResume.id);
+      updatedResumes.push(updatedResume);
+      
+      localStorage.setItem('savedResumes', JSON.stringify(updatedResumes));
+      setSavedResumes(updatedResumes);
+      
+      toast.success("Resume saved successfully");
+    } catch (error) {
+      console.error("Error saving resume:", error);
+      toast.error("Failed to save resume");
+    }
+  };
+
+  const loadResume = async (id: string) => {
+    try {
+      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      const resume = savedResumes.find((r: ResumeData) => r.id === id);
+      
+      if (resume) {
+        setResumeData(resume);
+        toast.success("Resume loaded successfully");
+      } else {
+        toast.error("Resume not found");
+      }
+    } catch (error) {
+      console.error("Error loading resume:", error);
+      toast.error("Failed to load resume");
+    }
+  };
+
+  const loadSavedResumes = async () => {
+    try {
+      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      setSavedResumes(savedResumes);
+    } catch (error) {
+      console.error("Error loading saved resumes:", error);
+      toast.error("Failed to load saved resumes");
+    }
+  };
+
+  // Load saved resumes on component mount
+  useEffect(() => {
+    loadSavedResumes();
+  }, []);
+
   const value = {
     resumeData,
     updatePersonalInfo,
@@ -211,6 +280,10 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
     removeCertification,
     updateHobbies,
     updateTemplate,
+    saveResume,
+    loadResume,
+    savedResumes,
+    loadSavedResumes,
   };
 
   return (

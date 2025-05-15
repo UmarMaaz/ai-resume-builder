@@ -30,6 +30,16 @@ const TemplateSelector = () => {
       name: "Professional",
       description: "Traditional corporate style",
     },
+    {
+      id: "compact",
+      name: "Compact",
+      description: "Space-efficient design for more content",
+    },
+    {
+      id: "creative",
+      name: "Creative",
+      description: "Colorful and unique presentation",
+    },
   ];
 
   return (
@@ -40,7 +50,7 @@ const TemplateSelector = () => {
           <RadioGroup
             value={resumeData.selectedTemplate}
             onValueChange={(value) => updateTemplate(value as any)}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 gap-4"
           >
             {templates.map((template) => (
               <div key={template.id}>
