@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import Header from "@/components/Header";
@@ -8,6 +9,7 @@ import ResumePreview from "@/components/ResumePreview";
 import { ResumeData } from "@/types/resume";
 import { Button } from "@/components/ui/button";
 import { ResumeProvider, useResumeContext } from "@/context/ResumeContext";
+import { useAuth } from "@/context/AuthContext";
 import html2pdf from "html2pdf.js";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +54,8 @@ const initialResumeData: ResumeData = {
 
 const ResumeActions = () => {
   const { saveResume, loadSavedResumes, savedResumes, loadResume } = useResumeContext();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [showSaved, setShowSaved] = useState(false);
 
   const handleExportToPDF = () => {
@@ -79,21 +83,36 @@ const ResumeActions = () => {
     );
   };
 
+  const handleSaveClick = () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to save your resume", {
+        action: {
+          label: "Sign In",
+          onClick: () => navigate("/signin"),
+        },
+      });
+      return;
+    }
+    saveResume();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <Button onClick={handleExportToPDF} className="bg-resume-accent hover:bg-resume-accent/90">
           Export to PDF
         </Button>
-        <Button onClick={saveResume} variant="outline">
+        <Button onClick={handleSaveClick} variant="outline">
           Save Resume
         </Button>
-        <Button onClick={() => {
-          setShowSaved(!showSaved);
-          loadSavedResumes();
-        }} variant="outline">
-          {showSaved ? "Hide Saved" : "Show Saved"}
-        </Button>
+        {isAuthenticated && (
+          <Button onClick={() => {
+            setShowSaved(!showSaved);
+            loadSavedResumes();
+          }} variant="outline">
+            {showSaved ? "Hide Saved" : "Show Saved"}
+          </Button>
+        )}
       </div>
 
       {showSaved && savedResumes.length > 0 && (
@@ -133,6 +152,7 @@ const ResumeActions = () => {
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, user } = useAuth();
   
   useEffect(() => {
     // Load saved data from localStorage if it exists
