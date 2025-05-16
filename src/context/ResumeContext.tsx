@@ -1,6 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { ResumeData } from "@/types/resume";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "./AuthContext";
 
 interface ResumeContextType {
   resumeData: ResumeData;
@@ -45,14 +48,15 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
   children,
   initialData,
 }) => {
+  const { user, isAuthenticated } = useAuth();
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
-    // Try to load from localStorage first
+    // Try to load from localStorage first (fallback for non-authenticated users)
     const savedData = localStorage.getItem("resumeData");
     if (savedData) {
       try {
         return JSON.parse(savedData);
       } catch (e) {
-        console.error("Failed to parse stored resume data", e);
+        console.error('Failed to parse stored resume data', e);
         return initialData;
       }
     }
@@ -61,10 +65,17 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
 
   const [savedResumes, setSavedResumes] = useState<ResumeData[]>([]);
 
-  // Save to localStorage whenever resumeData changes
+  // Save to localStorage as a fallback when not authenticated
   useEffect(() => {
     localStorage.setItem("resumeData", JSON.stringify(resumeData));
   }, [resumeData]);
+
+  // Load user's resumes from Supabase when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadSavedResumes();
+    }
+  }, [isAuthenticated, user]);
 
   // Utility functions for managing resume data
   const updatePersonalInfo = (personalInfo: Partial<ResumeData["personalInfo"]>) => {
@@ -200,30 +211,66 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
     setResumeData((prev) => ({ ...prev, selectedTemplate }));
   };
 
-  // Database functions
+  // Database functions with Supabase
   const saveResume = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to save a resume", {
+        action: {
+          label: "Sign In",
+          onClick: () => window.location.href = "/signin",
+        },
+      });
+      return;
+    }
+
     try {
-      // For now, we'll simulate a database save by storing in localStorage
       const now = new Date().toISOString();
-      const updatedResume = {
+      const resumeToSave = {
         ...resumeData,
-        id: resumeData.id || `resume-${Date.now()}`,
+        userId: user.id,
         updatedAt: now,
         createdAt: resumeData.createdAt || now,
       };
-      
-      // Save the current resume
-      setResumeData(updatedResume);
-      
-      // Update savedResumes list
-      const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-      const updatedResumes = existingResumes.filter((r: ResumeData) => r.id !== updatedResume.id);
-      updatedResumes.push(updatedResume);
-      
-      localStorage.setItem('savedResumes', JSON.stringify(updatedResumes));
-      setSavedResumes(updatedResumes);
+
+      // If resume has an ID, update it, otherwise insert a new one
+      if (resumeData.id) {
+        const { error } = await supabase
+          .from('resumes')
+          .update({
+            data: resumeToSave,
+            updated_at: now,
+          })
+          .eq('id', resumeData.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('resumes')
+          .insert({
+            user_id: user.id,
+            data: resumeToSave,
+            created_at: now,
+            updated_at: now,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        
+        // Update local resume with new ID
+        setResumeData(prev => ({ 
+          ...prev, 
+          id: data.id, 
+          createdAt: now, 
+          updatedAt: now 
+        }));
+      }
       
       toast.success("Resume saved successfully");
+      
+      // Refresh the list of saved resumes
+      await loadSavedResumes();
     } catch (error) {
       console.error("Error saving resume:", error);
       toast.error("Failed to save resume");
@@ -231,12 +278,23 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
   };
 
   const loadResume = async (id: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to load a resume");
+      return;
+    }
+
     try {
-      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-      const resume = savedResumes.find((r: ResumeData) => r.id === id);
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('data')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
       
-      if (resume) {
-        setResumeData(resume);
+      if (data && data.data) {
+        setResumeData(data.data);
         toast.success("Resume loaded successfully");
       } else {
         toast.error("Resume not found");
@@ -248,19 +306,33 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
   };
 
   const loadSavedResumes = async () => {
+    if (!isAuthenticated || !user) {
+      setSavedResumes([]);
+      return;
+    }
+
     try {
-      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-      setSavedResumes(savedResumes);
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('id, created_at, updated_at, data')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const formattedResumes = data.map(item => ({
+        ...item.data,
+        id: item.id,
+        updatedAt: item.updated_at,
+        createdAt: item.created_at
+      }));
+
+      setSavedResumes(formattedResumes);
     } catch (error) {
       console.error("Error loading saved resumes:", error);
       toast.error("Failed to load saved resumes");
     }
   };
-
-  // Load saved resumes on component mount
-  useEffect(() => {
-    loadSavedResumes();
-  }, []);
 
   const value = {
     resumeData,

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const Header = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { profile, isAuthenticated, logout } = useAuth();
 
   return (
     <header className="bg-white shadow-sm">
@@ -30,15 +30,15 @@ const Header = () => {
                 <div className="hidden md:flex items-center mr-2">
                   <Avatar className="h-9 w-9 mr-2">
                     <AvatarFallback>
-                      {user?.name ? user.name.substring(0, 2).toUpperCase() : user?.email.substring(0, 2).toUpperCase()}
+                      {profile?.name ? profile.name.substring(0, 2).toUpperCase() : profile?.email.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">{user?.name || user?.email}</span>
+                  <span className="text-sm font-medium">{profile?.name || profile?.email}</span>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={logout} 
+                  onClick={() => logout()} 
                   className="flex items-center gap-1"
                 >
                   <LogOut className="h-4 w-4" />

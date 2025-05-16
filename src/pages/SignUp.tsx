@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }).optional(),
@@ -33,7 +34,14 @@ type FormValues = z.infer<typeof formSchema>;
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
+  
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -46,9 +54,14 @@ const SignUp = () => {
   });
 
   const onSubmit = async (values: FormValues) => {
-    const success = await register(values.email, values.password, values.name);
-    if (success) {
-      navigate("/");
+    try {
+      const success = await register(values.email, values.password, values.name);
+      if (success) {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("An error occurred during sign up");
     }
   };
 
@@ -118,8 +131,12 @@ const SignUp = () => {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-resume-accent hover:bg-resume-accent/90">
-                  Sign Up
+                <Button 
+                  type="submit" 
+                  className="w-full bg-resume-accent hover:bg-resume-accent/90"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? "Creating account..." : "Sign Up"}
                 </Button>
               </form>
             </Form>
