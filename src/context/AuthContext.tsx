@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthError, Session, User } from "@supabase/supabase-js";
 
 export interface UserProfile {
-  id: string;
+  id: string;  // Keep as string to match auth.users.id which is UUID
   email: string;
   name?: string;
 }
@@ -17,6 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,7 +53,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return null;
       }
       
-      return data as UserProfile;
+      // Convert the profile data to match our UserProfile interface
+      return {
+        id: data.id.toString(), 
+        email: data.email || '',
+        name: data.name
+      } as UserProfile;
     } catch (error) {
       console.error('Error fetching profile:', error);
       return null;
@@ -62,6 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Create or update profile
   const upsertProfile = async (userId: string, email: string, name?: string) => {
     try {
+      // Convert the string UUID to a number if that's what the DB expects
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -69,7 +76,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           email,
           name,
           updated_at: new Date().toISOString(),
-        });
+        }, { onConflict: 'id' });
         
       if (error) {
         console.error('Error upserting profile:', error);
@@ -155,6 +162,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  // Add the register function for email/password signup
+  const register = async (email: string, password: string, name?: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+          emailRedirectTo: window.location.origin
+        }
+      });
+
+      if (error) {
+        console.error("Registration error:", error);
+        toast.error(error.message);
+        return false;
+      }
+
+      if (data.user) {
+        toast.success("Registration successful! Please check your email to verify your account.");
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("Registration failed. Please try again");
+      return false;
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -176,6 +214,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isLoading,
         loginWithGoogle,
         logout,
+        register,
       }}
     >
       {children}
