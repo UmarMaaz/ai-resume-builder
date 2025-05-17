@@ -22,6 +22,7 @@ const SignIn = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log("Initiating Google sign-in");
       await loginWithGoogle();
     } catch (error) {
       console.error("Login error:", error);
@@ -30,7 +31,14 @@ const SignIn = () => {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="h-16 w-16 border-4 border-t-resume-accent border-gray-200 border-solid rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -41,7 +49,7 @@ const SignIn = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
             <CardDescription className="text-center">
-              Sign in to your account to manage your resumes
+              Sign in with Google to manage your resumes
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

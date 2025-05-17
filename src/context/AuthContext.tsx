@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthError, Session, User } from "@supabase/supabase-js";
 
 export interface UserProfile {
-  id: number;  // Changed from string to number to match the database schema
+  id: number;  // Using number to match the database schema
   email: string;
   name?: string;
 }
@@ -56,9 +56,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (!data) return null;
       
-      // Return the profile with numeric ID
       return {
-        id: data.id, // Already a number, no need for conversion
+        id: data.id,
         email: data.email || '',
         name: data.name
       } as UserProfile;
@@ -95,6 +94,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state change event:", event);
         setUser(session?.user ?? null);
         
         if (session?.user) {
@@ -109,7 +109,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             await upsertProfile(
               session.user.id,
               session.user.email || '',
-              session.user.user_metadata?.name || session.user.user_metadata?.full_name
+              session.user.user_metadata?.name || 
+              session.user.user_metadata?.full_name
             );
           }
         } else {
@@ -124,6 +125,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session ? "Session found" : "No session");
         setUser(session?.user ?? null);
         
         if (session?.user) {
@@ -151,7 +153,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const loginWithGoogle = async (): Promise<void> => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log("Starting Google login process");
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
@@ -159,7 +162,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       
       if (error) {
+        console.error("Google login error:", error);
         toast.error(error.message);
+      } else {
+        console.log("Google login initiated:", data);
       }
     } catch (error) {
       console.error("Google login error:", error);
