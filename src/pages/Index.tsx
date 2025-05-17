@@ -126,7 +126,7 @@ const ResumeActions = () => {
                 <div 
                   key={resume.id} 
                   className="flex justify-between items-center p-2 hover:bg-gray-100 rounded cursor-pointer"
-                  onClick={() => resume.id && loadResume(resume.id)}
+                  onClick={() => loadResume(resume.id as string)}
                 >
                   <div>
                     <p className="font-medium">{resume.personalInfo.fullName || "Unnamed Resume"}</p>
@@ -136,7 +136,7 @@ const ResumeActions = () => {
                   </div>
                   <Button variant="ghost" size="sm" onClick={(e) => {
                     e.stopPropagation();
-                    resume.id && loadResume(resume.id);
+                    loadResume(resume.id as string);
                   }}>
                     Load
                   </Button>

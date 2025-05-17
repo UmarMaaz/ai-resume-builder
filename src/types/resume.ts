@@ -39,8 +39,8 @@ export interface ResumeData {
   certifications: Certification[];
   hobbies: string;
   selectedTemplate: TemplateType;
-  id?: number; // Using number to match database schema
-  userId?: number; // Using number to match database schema
-  createdAt?: string;
-  updatedAt?: string;
+  id?: string; // Add ID field for database storage
+  userId?: string; // Add user ID field for database storage
+  createdAt?: string; // Add creation timestamp
+  updatedAt?: string; // Add update timestamp
 }

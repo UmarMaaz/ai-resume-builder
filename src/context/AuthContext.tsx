@@ -1,23 +1,20 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { AuthError, Session, User } from "@supabase/supabase-js";
 
-export interface UserProfile {
-  id: number;  // Using number to match the database schema
+export interface User {
+  id: string;
   email: string;
   name?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  profile: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  loginWithGoogle: () => Promise<void>;
-  logout: () => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name?: string) => Promise<boolean>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,187 +33,82 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Fetch user profile data
-  const fetchProfile = async (userId: string) => {
-    try {
-      // Convert the string UUID to a numeric ID for database query
-      const numericId = parseInt(userId);
-      console.log("Fetching profile for user ID:", numericId);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, name')
-        .eq('id', numericId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile', error);
-        return null;
-      }
-      
-      if (!data) {
-        console.log("No profile found, will create one");
-        return null;
-      }
-      
-      console.log("Profile fetched:", data);
-      return {
-        id: data.id,
-        email: data.email || '',
-        name: data.name
-      } as UserProfile;
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      return null;
-    }
-  };
-
-  // Create or update profile
-  const upsertProfile = async (userId: string, email: string, name?: string) => {
-    try {
-      // Convert the string UUID from auth to a numeric ID for the profiles table
-      const numericId = parseInt(userId);
-      console.log("Upserting profile:", { id: numericId, email, name });
-      
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: numericId,
-          email,
-          name,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
-        
-      if (error) {
-        console.error('Error upserting profile:', error);
-      } else {
-        console.log("Profile upserted successfully");
-      }
-    } catch (error) {
-      console.error('Error upserting profile:', error);
-    }
-  };
-
   useEffect(() => {
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state change event:", event);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          try {
-            const userProfile = await fetchProfile(session.user.id);
-            setProfile(userProfile || { 
-              id: parseInt(session.user.id), 
-              email: session.user.email || '' 
-            });
-
-            // If new sign in, update the profile
-            if (event === 'SIGNED_IN') {
-              await upsertProfile(
-                session.user.id,
-                session.user.email || '',
-                session.user.user_metadata?.name || 
-                session.user.user_metadata?.full_name
-              );
-            }
-          } catch (err) {
-            console.error("Error processing auth state change:", err);
-          }
-        } else {
-          setProfile(null);
+    // Check for existing session on mount
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Error parsing stored user", e);
+          // Clear invalid user data
+          localStorage.removeItem("user");
         }
-        
-        setIsLoading(false);
       }
-    );
-
-    // Initial auth check
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Initial session check:", session ? "Session found" : "No session");
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          try {
-            const userProfile = await fetchProfile(session.user.id);
-            setProfile(userProfile || { 
-              id: parseInt(session.user.id), 
-              email: session.user.email || '' 
-            });
-          } catch (err) {
-            console.error("Error fetching initial profile:", err);
-          }
-        }
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-      } finally {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     };
 
     checkAuth();
-
-    return () => {
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
   }, []);
 
-  const loginWithGoogle = async (): Promise<void> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      console.log("Starting Google login process");
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        }
-      });
+      // In a real app, this would be an API call to authenticate
+      // For demo purposes, we'll just check against localStorage
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const foundUser = users.find(
+        (u: any) => u.email === email && u.password === password
+      );
       
-      if (error) {
-        console.error("Google login error:", error);
-        toast.error(`Login error: ${error.message}`);
-        throw error;
-      } else {
-        console.log("Google login initiated:", data);
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast.error("Login failed. Please try again");
-      throw error;
-    }
-  };
-
-  // Add the register function for email/password signup
-  const register = async (email: string, password: string, name?: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { name },
-          emailRedirectTo: window.location.origin
-        }
-      });
-
-      if (error) {
-        console.error("Registration error:", error);
-        toast.error(error.message);
+      if (!foundUser) {
+        toast.error("Invalid email or password");
         return false;
       }
 
-      if (data.user) {
-        toast.success("Registration successful! Please check your email to verify your account.");
-        return true;
-      }
-      
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+      toast.success("Login successful");
+      return true;
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again");
       return false;
+    }
+  };
+
+  const register = async (email: string, password: string, name?: string): Promise<boolean> => {
+    try {
+      // In a real app, this would be an API call to register
+      // For demo purposes, we'll just store in localStorage
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      
+      // Check if user already exists
+      if (users.some((u: any) => u.email === email)) {
+        toast.error("User already exists with this email");
+        return false;
+      }
+
+      const newUser = {
+        id: `user_${Date.now()}`,
+        email,
+        password,
+        name,
+      };
+      
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+      
+      // Auto-login after registration
+      const { password: _, ...userWithoutPassword } = newUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+      
+      toast.success("Registration successful");
+      return true;
     } catch (error) {
       console.error("Registration error:", error);
       toast.error("Registration failed. Please try again");
@@ -224,28 +116,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
-      toast.success("Logged out successfully");
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Logout failed. Please try again");
-    }
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+    toast.success("Logged out successfully");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        profile,
         isAuthenticated: !!user,
         isLoading,
-        loginWithGoogle,
-        logout,
+        login,
         register,
+        logout,
       }}
     >
       {children}

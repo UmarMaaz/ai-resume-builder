@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { ResumeData } from "@/types/resume";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./AuthContext";
 
 interface ResumeContextType {
   resumeData: ResumeData;
@@ -23,7 +21,7 @@ interface ResumeContextType {
   updateHobbies: (hobbies: string) => void;
   updateTemplate: (template: ResumeData["selectedTemplate"]) => void;
   saveResume: () => Promise<void>;
-  loadResume: (id: number) => Promise<void>;
+  loadResume: (id: string) => Promise<void>;
   savedResumes: ResumeData[];
   loadSavedResumes: () => Promise<void>;
 }
@@ -47,15 +45,14 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
   children,
   initialData,
 }) => {
-  const { user, isAuthenticated } = useAuth();
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
-    // Try to load from localStorage first (fallback for non-authenticated users)
+    // Try to load from localStorage first
     const savedData = localStorage.getItem("resumeData");
     if (savedData) {
       try {
         return JSON.parse(savedData);
       } catch (e) {
-        console.error('Failed to parse stored resume data', e);
+        console.error("Failed to parse stored resume data", e);
         return initialData;
       }
     }
@@ -64,17 +61,10 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
 
   const [savedResumes, setSavedResumes] = useState<ResumeData[]>([]);
 
-  // Save to localStorage as a fallback when not authenticated
+  // Save to localStorage whenever resumeData changes
   useEffect(() => {
     localStorage.setItem("resumeData", JSON.stringify(resumeData));
   }, [resumeData]);
-
-  // Load user's resumes from Supabase when authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadSavedResumes();
-    }
-  }, [isAuthenticated, user]);
 
   // Utility functions for managing resume data
   const updatePersonalInfo = (personalInfo: Partial<ResumeData["personalInfo"]>) => {
@@ -210,86 +200,43 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
     setResumeData((prev) => ({ ...prev, selectedTemplate }));
   };
 
-  // Database functions with Supabase
+  // Database functions
   const saveResume = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to save a resume", {
-        action: {
-          label: "Sign In",
-          onClick: () => window.location.href = "/signin",
-        },
-      });
-      return;
-    }
-
     try {
+      // For now, we'll simulate a database save by storing in localStorage
       const now = new Date().toISOString();
-      const userId = parseInt(user.id);
+      const updatedResume = {
+        ...resumeData,
+        id: resumeData.id || `resume-${Date.now()}`,
+        updatedAt: now,
+        createdAt: resumeData.createdAt || now,
+      };
       
-      // Properly handle the data serialization for Supabase
-      if (resumeData.id) {
-        const { error } = await supabase
-          .from('resumes')
-          .update({
-            data: resumeData as any, // Use 'as any' to bypass the JSON typing issue
-            updated_at: now,
-          })
-          .eq('id', resumeData.id)
-          .eq('user_id', userId);
-
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from('resumes')
-          .insert({
-            user_id: userId,
-            data: resumeData as any, // Use 'as any' to bypass the JSON typing issue
-            created_at: now,
-            updated_at: now,
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        
-        // Update local resume with new ID
-        setResumeData(prev => ({ 
-          ...prev, 
-          id: data.id, 
-          createdAt: now, 
-          updatedAt: now 
-        }));
-      }
+      // Save the current resume
+      setResumeData(updatedResume);
+      
+      // Update savedResumes list
+      const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      const updatedResumes = existingResumes.filter((r: ResumeData) => r.id !== updatedResume.id);
+      updatedResumes.push(updatedResume);
+      
+      localStorage.setItem('savedResumes', JSON.stringify(updatedResumes));
+      setSavedResumes(updatedResumes);
       
       toast.success("Resume saved successfully");
-      
-      // Refresh the list of saved resumes
-      await loadSavedResumes();
     } catch (error) {
       console.error("Error saving resume:", error);
       toast.error("Failed to save resume");
     }
   };
 
-  const loadResume = async (id: number) => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to load a resume");
-      return;
-    }
-
+  const loadResume = async (id: string) => {
     try {
-      const { data, error } = await supabase
-        .from('resumes')
-        .select('data')
-        .eq('id', id)
-        .eq('user_id', parseInt(user.id))
-        .single();
-
-      if (error) throw error;
+      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      const resume = savedResumes.find((r: ResumeData) => r.id === id);
       
-      if (data && data.data) {
-        // Safely set resume data with proper type handling
-        setResumeData(data.data as unknown as ResumeData);
+      if (resume) {
+        setResumeData(resume);
         toast.success("Resume loaded successfully");
       } else {
         toast.error("Resume not found");
@@ -301,33 +248,19 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
   };
 
   const loadSavedResumes = async () => {
-    if (!isAuthenticated || !user) {
-      setSavedResumes([]);
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('resumes')
-        .select('id, created_at, updated_at, data')
-        .eq('user_id', parseInt(user.id))
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      
-      const formattedResumes = data.map(item => ({
-        ...(item.data as unknown as ResumeData),
-        id: item.id,
-        updatedAt: item.updated_at,
-        createdAt: item.created_at
-      }));
-
-      setSavedResumes(formattedResumes);
+      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      setSavedResumes(savedResumes);
     } catch (error) {
       console.error("Error loading saved resumes:", error);
       toast.error("Failed to load saved resumes");
     }
   };
+
+  // Load saved resumes on component mount
+  useEffect(() => {
+    loadSavedResumes();
+  }, []);
 
   const value = {
     resumeData,

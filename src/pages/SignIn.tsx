@@ -1,50 +1,49 @@
 
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { FcGoogle } from "react-icons/fc";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { loginWithGoogle, isAuthenticated, isLoading } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
+  const { login } = useAuth();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: FormValues) => {
+    const success = await login(values.email, values.password);
+    if (success) {
       navigate("/");
     }
-  }, [isAuthenticated, navigate]);
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setError(null);
-      console.log("Initiating Google sign-in");
-      await loginWithGoogle();
-      // Success is handled by the auth state change in AuthContext
-    } catch (error) {
-      console.error("Login error:", error);
-      setError("Authentication failed. Please try again.");
-      toast.error("An error occurred during sign in");
-    }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <div className="h-16 w-16 border-4 border-t-resume-accent border-gray-200 border-solid rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading authentication...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -52,38 +51,50 @@ const SignIn = () => {
       <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign in with Google</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
             <CardDescription className="text-center">
-              Use your Google account to sign in and manage your resumes
+              Enter your email and password to sign in to your account
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
-            <Button 
-              onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-2 bg-white text-black border hover:bg-gray-100"
-              variant="outline"
-            >
-              <FcGoogle className="h-5 w-5" />
-              Sign in with Google
-            </Button>
-            
-            <div className="mt-4 text-center text-sm text-gray-500">
-              By signing in, you agree to our Terms of Service and Privacy Policy.
-            </div>
-            
-            <div className="p-3 bg-blue-50 rounded-md text-xs text-blue-700 mt-6">
-              <p>Having trouble signing in?</p>
-              <ul className="list-disc ml-4 mt-1 space-y-1">
-                <li>Check that Google authentication is properly configured in Supabase</li>
-                <li>Ensure redirect URLs are set correctly</li>
-                <li>Check browser console for specific errors</li>
-              </ul>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="your.email@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full bg-resume-accent hover:bg-resume-accent/90">
+                  Sign In
+                </Button>
+              </form>
+            </Form>
+            <div className="mt-4 text-center text-sm">
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-resume-accent hover:underline">
+                Sign up
+              </Link>
             </div>
           </CardContent>
         </Card>

@@ -1,18 +1,13 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { FileText, LogOut } from "lucide-react";
+import { FileText, LogIn, UserPlus, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FcGoogle } from "react-icons/fc";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const Header = () => {
-  const { profile, isAuthenticated, logout, loginWithGoogle } = useAuth();
-
-  const handleGoogleLogin = async () => {
-    await loginWithGoogle();
-  };
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <header className="bg-white shadow-sm">
@@ -34,20 +29,16 @@ const Header = () => {
               <>
                 <div className="hidden md:flex items-center mr-2">
                   <Avatar className="h-9 w-9 mr-2">
-                    {profile?.name && profile.name.includes("://") ? (
-                      <AvatarImage src={profile?.name} alt={profile?.email} />
-                    ) : (
-                      <AvatarFallback>
-                        {profile?.name ? profile.name.substring(0, 2).toUpperCase() : profile?.email.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    )}
+                    <AvatarFallback>
+                      {user?.name ? user.name.substring(0, 2).toUpperCase() : user?.email.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">{profile?.name || profile?.email}</span>
+                  <span className="text-sm font-medium">{user?.name || user?.email}</span>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => logout()} 
+                  onClick={logout} 
                   className="flex items-center gap-1"
                 >
                   <LogOut className="h-4 w-4" />
@@ -55,15 +46,29 @@ const Header = () => {
                 </Button>
               </>
             ) : (
-              <Button 
-                className="bg-white text-black border hover:bg-gray-100 flex items-center gap-1"
-                size="sm"
-                variant="outline"
-                onClick={handleGoogleLogin}
-              >
-                <FcGoogle className="h-4 w-4" />
-                <span className="hidden md:inline">Sign in with Google</span>
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  asChild
+                  className="flex items-center gap-1"
+                >
+                  <Link to="/signin">
+                    <LogIn className="h-4 w-4" />
+                    <span className="hidden md:inline">Sign In</span>
+                  </Link>
+                </Button>
+                <Button 
+                  className="bg-resume-accent hover:bg-resume-accent/90 flex items-center gap-1"
+                  size="sm" 
+                  asChild
+                >
+                  <Link to="/signup">
+                    <UserPlus className="h-4 w-4" />
+                    <span className="hidden md:inline">Sign Up</span>
+                  </Link>
+                </Button>
+              </>
             )}
           </div>
         </div>
