@@ -43,10 +43,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const fetchProfile = async (userId: string) => {
     try {
       // Convert the string UUID to a numeric ID for database query
+      const numericId = parseInt(userId);
+      console.log("Fetching profile for user ID:", numericId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, name')
-        .eq('id', parseInt(userId))
+        .eq('id', numericId)
         .single();
       
       if (error) {
@@ -54,8 +57,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return null;
       }
       
-      if (!data) return null;
+      if (!data) {
+        console.log("No profile found, will create one");
+        return null;
+      }
       
+      console.log("Profile fetched:", data);
       return {
         id: data.id,
         email: data.email || '',
@@ -72,6 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       // Convert the string UUID from auth to a numeric ID for the profiles table
       const numericId = parseInt(userId);
+      console.log("Upserting profile:", { id: numericId, email, name });
       
       const { error } = await supabase
         .from('profiles')
@@ -84,6 +92,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
       if (error) {
         console.error('Error upserting profile:', error);
+      } else {
+        console.log("Profile upserted successfully");
       }
     } catch (error) {
       console.error('Error upserting profile:', error);
@@ -98,20 +108,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          const userProfile = await fetchProfile(session.user.id);
-          setProfile(userProfile || { 
-            id: parseInt(session.user.id), 
-            email: session.user.email || '' 
-          });
+          try {
+            const userProfile = await fetchProfile(session.user.id);
+            setProfile(userProfile || { 
+              id: parseInt(session.user.id), 
+              email: session.user.email || '' 
+            });
 
-          // If new sign in, update the profile
-          if (event === 'SIGNED_IN') {
-            await upsertProfile(
-              session.user.id,
-              session.user.email || '',
-              session.user.user_metadata?.name || 
-              session.user.user_metadata?.full_name
-            );
+            // If new sign in, update the profile
+            if (event === 'SIGNED_IN') {
+              await upsertProfile(
+                session.user.id,
+                session.user.email || '',
+                session.user.user_metadata?.name || 
+                session.user.user_metadata?.full_name
+              );
+            }
+          } catch (err) {
+            console.error("Error processing auth state change:", err);
           }
         } else {
           setProfile(null);
@@ -129,11 +143,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          const userProfile = await fetchProfile(session.user.id);
-          setProfile(userProfile || { 
-            id: parseInt(session.user.id), 
-            email: session.user.email || '' 
-          });
+          try {
+            const userProfile = await fetchProfile(session.user.id);
+            setProfile(userProfile || { 
+              id: parseInt(session.user.id), 
+              email: session.user.email || '' 
+            });
+          } catch (err) {
+            console.error("Error fetching initial profile:", err);
+          }
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
@@ -163,13 +181,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (error) {
         console.error("Google login error:", error);
-        toast.error(error.message);
+        toast.error(`Login error: ${error.message}`);
+        throw error;
       } else {
         console.log("Google login initiated:", data);
       }
     } catch (error) {
       console.error("Google login error:", error);
       toast.error("Login failed. Please try again");
+      throw error;
     }
   };
 

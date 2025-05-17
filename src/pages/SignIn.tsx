@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import Header from "@/components/Header";
@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { FcGoogle } from "react-icons/fc";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const SignIn = () => {
   const navigate = useNavigate();
   const { loginWithGoogle, isAuthenticated, isLoading } = useAuth();
+  const [error, setError] = useState<string | null>(null);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -22,10 +24,13 @@ const SignIn = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      setError(null);
       console.log("Initiating Google sign-in");
       await loginWithGoogle();
+      // Success is handled by the auth state change in AuthContext
     } catch (error) {
       console.error("Login error:", error);
+      setError("Authentication failed. Please try again.");
       toast.error("An error occurred during sign in");
     }
   };
@@ -53,6 +58,12 @@ const SignIn = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <Button 
               onClick={handleGoogleSignIn}
               className="w-full flex items-center justify-center gap-2 bg-white text-black border hover:bg-gray-100"
@@ -61,8 +72,18 @@ const SignIn = () => {
               <FcGoogle className="h-5 w-5" />
               Sign in with Google
             </Button>
-            <div className="mt-4 text-center text-sm">
+            
+            <div className="mt-4 text-center text-sm text-gray-500">
               By signing in, you agree to our Terms of Service and Privacy Policy.
+            </div>
+            
+            <div className="p-3 bg-blue-50 rounded-md text-xs text-blue-700 mt-6">
+              <p>Having trouble signing in?</p>
+              <ul className="list-disc ml-4 mt-1 space-y-1">
+                <li>Check that Google authentication is properly configured in Supabase</li>
+                <li>Ensure redirect URLs are set correctly</li>
+                <li>Check browser console for specific errors</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
