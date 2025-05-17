@@ -23,7 +23,7 @@ interface ResumeContextType {
   updateHobbies: (hobbies: string) => void;
   updateTemplate: (template: ResumeData["selectedTemplate"]) => void;
   saveResume: () => Promise<void>;
-  loadResume: (id: string) => Promise<void>;
+  loadResume: (id: number) => Promise<void>;
   savedResumes: ResumeData[];
   loadSavedResumes: () => Promise<void>;
 }
@@ -226,19 +226,12 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
       const now = new Date().toISOString();
       const userId = parseInt(user.id);
       
-      const resumeToSave = {
-        ...resumeData,
-        userId: userId,
-        updatedAt: now,
-        createdAt: resumeData.createdAt || now,
-      };
-
-      // If resume has an ID, update it, otherwise insert a new one
+      // Properly handle the data serialization for Supabase
       if (resumeData.id) {
         const { error } = await supabase
           .from('resumes')
           .update({
-            data: resumeToSave,
+            data: resumeData as any, // Use 'as any' to bypass the JSON typing issue
             updated_at: now,
           })
           .eq('id', resumeData.id)
@@ -250,7 +243,7 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
           .from('resumes')
           .insert({
             user_id: userId,
-            data: resumeToSave,
+            data: resumeData as any, // Use 'as any' to bypass the JSON typing issue
             created_at: now,
             updated_at: now,
           })
@@ -278,7 +271,7 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
     }
   };
 
-  const loadResume = async (id: string) => {
+  const loadResume = async (id: number) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to load a resume");
       return;
@@ -295,7 +288,8 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
       if (error) throw error;
       
       if (data && data.data) {
-        setResumeData(data.data);
+        // Safely set resume data with proper type handling
+        setResumeData(data.data as unknown as ResumeData);
         toast.success("Resume loaded successfully");
       } else {
         toast.error("Resume not found");
@@ -322,7 +316,7 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
       if (error) throw error;
       
       const formattedResumes = data.map(item => ({
-        ...item.data,
+        ...(item.data as unknown as ResumeData),
         id: item.id,
         updatedAt: item.updated_at,
         createdAt: item.created_at
