@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { AuthError, Session, User } from "@supabase/supabase-js";
 
 export interface UserProfile {
@@ -15,8 +15,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name?: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -92,6 +91,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             id: session.user.id, 
             email: session.user.email || ''
           });
+
+          // If new sign in, update the profile
+          if (event === 'SIGNED_IN') {
+            await upsertProfile(
+              session.user.id,
+              session.user.email || '',
+              session.user.user_metadata?.name || session.user.user_metadata?.full_name
+            );
+          }
         } else {
           setProfile(null);
         }
@@ -129,52 +137,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const loginWithGoogle = async (): Promise<void> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        }
       });
       
       if (error) {
         toast.error(error.message);
-        return false;
       }
-
-      toast.success("Login successful");
-      return true;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Google login error:", error);
       toast.error("Login failed. Please try again");
-      return false;
-    }
-  };
-
-  const register = async (email: string, password: string, name?: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
-      if (error) {
-        toast.error(error.message);
-        return false;
-      }
-      
-      if (data.user) {
-        // Create profile
-        await upsertProfile(data.user.id, email, name);
-        toast.success("Registration successful! Please verify your email if required.");
-        return true;
-      } else {
-        toast.error("Registration failed. Please try again");
-        return false;
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast.error("Registration failed. Please try again");
-      return false;
     }
   };
 
@@ -197,8 +174,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         profile,
         isAuthenticated: !!user,
         isLoading,
-        login,
-        register,
+        loginWithGoogle,
         logout,
       }}
     >
