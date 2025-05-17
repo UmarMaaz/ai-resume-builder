@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthError, Session, User } from "@supabase/supabase-js";
 
 export interface UserProfile {
-  id: string;  // Keep as string to match auth.users.id which is UUID
+  id: number;  // Changed from string to number to match the database schema
   email: string;
   name?: string;
 }
@@ -42,10 +42,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Fetch user profile data
   const fetchProfile = async (userId: string) => {
     try {
+      // Convert the string UUID to a numeric ID for database query
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, name')
-        .eq('id', userId)
+        .eq('id', parseInt(userId))
         .single();
       
       if (error) {
@@ -53,9 +54,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return null;
       }
       
-      // Convert the profile data to match our UserProfile interface
+      if (!data) return null;
+      
+      // Return the profile with numeric ID
       return {
-        id: data.id.toString(), 
+        id: data.id, // Already a number, no need for conversion
         email: data.email || '',
         name: data.name
       } as UserProfile;
@@ -68,11 +71,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Create or update profile
   const upsertProfile = async (userId: string, email: string, name?: string) => {
     try {
-      // Convert the string UUID to a number if that's what the DB expects
+      // Convert the string UUID from auth to a numeric ID for the profiles table
+      const numericId = parseInt(userId);
+      
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          id: userId,
+          id: numericId,
           email,
           name,
           updated_at: new Date().toISOString(),
@@ -95,7 +100,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (session?.user) {
           const userProfile = await fetchProfile(session.user.id);
           setProfile(userProfile || { 
-            id: session.user.id, 
+            id: parseInt(session.user.id), 
             email: session.user.email || ''
           });
 
@@ -124,7 +129,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (session?.user) {
           const userProfile = await fetchProfile(session.user.id);
           setProfile(userProfile || { 
-            id: session.user.id, 
+            id: parseInt(session.user.id), 
             email: session.user.email || '' 
           });
         }

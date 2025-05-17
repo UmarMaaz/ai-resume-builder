@@ -12,19 +12,19 @@ export interface Database {
     Tables: {
       profiles: {
         Row: {
-          id: string;
+          id: number;
           updated_at: string | null;
           name: string | null;
           email: string;
         };
         Insert: {
-          id: string;
+          id: number;
           updated_at?: string | null;
           name?: string | null;
           email: string;
         };
         Update: {
-          id?: string;
+          id?: number;
           updated_at?: string | null;
           name?: string | null;
           email?: string;
@@ -32,24 +32,24 @@ export interface Database {
       };
       resumes: {
         Row: {
-          id: string;
+          id: number;
           created_at: string;
           updated_at: string | null;
-          user_id: string;
+          user_id: number;
           data: any;
         };
         Insert: {
-          id?: string;
+          id?: number;
           created_at?: string;
           updated_at?: string | null;
-          user_id: string;
+          user_id: number;
           data: any;
         };
         Update: {
-          id?: string;
+          id?: number;
           created_at?: string;
           updated_at?: string | null;
-          user_id?: string;
+          user_id?: number;
           data?: any;
         };
       };

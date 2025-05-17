@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { ResumeData } from "@/types/resume";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 
 interface ResumeContextType {
@@ -225,9 +224,11 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
 
     try {
       const now = new Date().toISOString();
+      const userId = parseInt(user.id);
+      
       const resumeToSave = {
         ...resumeData,
-        userId: user.id,
+        userId: userId,
         updatedAt: now,
         createdAt: resumeData.createdAt || now,
       };
@@ -241,14 +242,14 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
             updated_at: now,
           })
           .eq('id', resumeData.id)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         if (error) throw error;
       } else {
         const { data, error } = await supabase
           .from('resumes')
           .insert({
-            user_id: user.id,
+            user_id: userId,
             data: resumeToSave,
             created_at: now,
             updated_at: now,
@@ -288,7 +289,7 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
         .from('resumes')
         .select('data')
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', parseInt(user.id))
         .single();
 
       if (error) throw error;
@@ -315,7 +316,7 @@ export const ResumeProvider: React.FC<ResumeProviderProps> = ({
       const { data, error } = await supabase
         .from('resumes')
         .select('id, created_at, updated_at, data')
-        .eq('user_id', user.id)
+        .eq('user_id', parseInt(user.id))
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
