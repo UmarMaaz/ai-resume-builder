@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const userProfile = await fetchProfile(session.user.id);
           setProfile(userProfile || { 
             id: parseInt(session.user.id), 
-            email: session.user.email || ''
+            email: session.user.email || '' 
           });
 
           // If new sign in, update the profile

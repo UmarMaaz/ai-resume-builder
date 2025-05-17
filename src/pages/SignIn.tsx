@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -47,9 +47,9 @@ const SignIn = () => {
       <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Sign in with Google</CardTitle>
             <CardDescription className="text-center">
-              Sign in with Google to manage your resumes
+              Use your Google account to sign in and manage your resumes
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
