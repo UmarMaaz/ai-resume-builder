@@ -14,7 +14,7 @@ const ResumePreview = () => {
   const { resumeData } = useResumeContext();
   
   return (
-    <div id="resume-preview" className="w-full min-h-[842px] bg-white overflow-auto">
+    <div id="resume-preview" className="w-full min-h-[842px] bg-white overflow-auto scale-100">
       {resumeData.selectedTemplate === "simple" && (
         <SimpleTemplate data={resumeData} />
       )}

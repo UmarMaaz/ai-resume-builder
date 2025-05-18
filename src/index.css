@@ -108,7 +108,7 @@
 
 /* Custom resume CSS */
 #resume-preview {
-  font-size: 14px;
+  font-size: 12px; /* Reduced from 14px */
   max-width: 100%;
   min-height: 1100px; /* Standard A4 size in pixels */
   overflow-y: auto;
@@ -120,4 +120,21 @@
     height: 100%;
     page-break-inside: avoid;
   }
+}
+
+/* Additional utility classes for resume templates */
+.resume-section {
+  @apply mb-3; /* Reduced margin */
+}
+
+.resume-section-title {
+  @apply text-sm font-bold mb-1 pb-0.5; /* Smaller section titles */
+}
+
+.resume-text-xs {
+  @apply text-xs leading-tight; /* Tighter line height */
+}
+
+.resume-text-sm {
+  @apply text-xs leading-snug; /* Use text-xs instead of text-sm */
 }

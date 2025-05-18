@@ -12,11 +12,11 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
   const skillsList = skills.split(',').map(skill => skill.trim()).filter(Boolean);
 
   return (
-    <div className="p-8 font-sans text-resume-dark">
+    <div className="p-6 font-sans text-resume-dark text-xs">
       {/* Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold mb-1">{personalInfo.fullName || "Your Name"}</h1>
-        <div className="flex justify-center gap-4 text-sm">
+      <div className="text-center mb-4">
+        <h1 className="text-xl font-bold mb-1">{personalInfo.fullName || "Your Name"}</h1>
+        <div className="flex justify-center gap-3 text-xs">
           {personalInfo.email && <span>{personalInfo.email}</span>}
           {personalInfo.phone && <span>• {personalInfo.phone}</span>}
         </div>
@@ -24,13 +24,13 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
 
       {/* Skills */}
       {skillsList.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold border-b border-gray-300 mb-2 pb-1">Skills</h2>
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold border-b border-gray-300 mb-1.5 pb-0.5">Skills</h2>
+          <div className="flex flex-wrap gap-1.5">
             {skillsList.map((skill, index) => (
               <span 
                 key={index} 
-                className="bg-gray-100 px-2 py-1 rounded text-sm"
+                className="bg-gray-100 px-1.5 py-0.5 rounded text-xs"
               >
                 {skill}
               </span>
@@ -41,16 +41,16 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
 
       {/* Work Experience */}
       {workExperience.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold border-b border-gray-300 mb-3 pb-1">Work Experience</h2>
-          <div className="space-y-4">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold border-b border-gray-300 mb-2 pb-0.5">Work Experience</h2>
+          <div className="space-y-3">
             {workExperience.map((exp, index) => (
               <div key={index}>
                 <div className="flex justify-between items-center">
-                  <h3 className="font-semibold">{exp.jobTitle || "Position"}</h3>
-                  <span className="text-sm text-gray-600">{exp.duration || "Duration"}</span>
+                  <h3 className="font-semibold text-xs">{exp.jobTitle || "Position"}</h3>
+                  <span className="text-xs text-gray-600">{exp.duration || "Duration"}</span>
                 </div>
-                <p className="text-sm mt-1">{exp.description || "Job description"}</p>
+                <p className="text-xs mt-0.5 leading-tight">{exp.description || "Job description"}</p>
               </div>
             ))}
           </div>
@@ -59,16 +59,16 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
 
       {/* Education */}
       {education.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold border-b border-gray-300 mb-3 pb-1">Education</h2>
-          <div className="space-y-3">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold border-b border-gray-300 mb-2 pb-0.5">Education</h2>
+          <div className="space-y-2">
             {education.map((edu, index) => (
               <div key={index} className="flex justify-between">
                 <div>
-                  <h3 className="font-semibold">{edu.degree || "Degree"}</h3>
-                  <p className="text-sm">{edu.institute || "Institute"}</p>
+                  <h3 className="font-semibold text-xs">{edu.degree || "Degree"}</h3>
+                  <p className="text-xs">{edu.institute || "Institute"}</p>
                 </div>
-                <span className="text-sm text-gray-600">{edu.year || "Year"}</span>
+                <span className="text-xs text-gray-600">{edu.year || "Year"}</span>
               </div>
             ))}
           </div>
@@ -77,13 +77,13 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
 
       {/* Projects */}
       {projects.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold border-b border-gray-300 mb-3 pb-1">Projects</h2>
-          <div className="space-y-3">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold border-b border-gray-300 mb-2 pb-0.5">Projects</h2>
+          <div className="space-y-2">
             {projects.map((project, index) => (
               <div key={index}>
-                <h3 className="font-semibold">{project.title || "Project Title"}</h3>
-                <p className="text-sm mt-1">{project.description || "Project description"}</p>
+                <h3 className="font-semibold text-xs">{project.title || "Project Title"}</h3>
+                <p className="text-xs mt-0.5 leading-tight">{project.description || "Project description"}</p>
               </div>
             ))}
           </div>
@@ -92,16 +92,16 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
 
       {/* Certifications */}
       {certifications.length > 0 && certifications[0].name && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold border-b border-gray-300 mb-3 pb-1">Certifications</h2>
-          <div className="space-y-2">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold border-b border-gray-300 mb-2 pb-0.5">Certifications</h2>
+          <div className="space-y-1.5">
             {certifications.map((cert, index) => (
               <div key={index} className="flex justify-between">
                 <div>
-                  <h3 className="font-semibold">{cert.name || "Certification Name"}</h3>
-                  {cert.issuer && <p className="text-sm">{cert.issuer}</p>}
+                  <h3 className="font-semibold text-xs">{cert.name || "Certification Name"}</h3>
+                  {cert.issuer && <p className="text-xs">{cert.issuer}</p>}
                 </div>
-                {cert.year && <span className="text-sm text-gray-600">{cert.year}</span>}
+                {cert.year && <span className="text-xs text-gray-600">{cert.year}</span>}
               </div>
             ))}
           </div>
@@ -111,8 +111,8 @@ const SimpleTemplate: React.FC<SimpleTemplateProps> = ({ data }) => {
       {/* Hobbies */}
       {hobbies && (
         <div>
-          <h2 className="text-lg font-bold border-b border-gray-300 mb-3 pb-1">Hobbies & Interests</h2>
-          <p className="text-sm">{hobbies}</p>
+          <h2 className="text-sm font-bold border-b border-gray-300 mb-2 pb-0.5">Hobbies & Interests</h2>
+          <p className="text-xs">{hobbies}</p>
         </div>
       )}
     </div>
